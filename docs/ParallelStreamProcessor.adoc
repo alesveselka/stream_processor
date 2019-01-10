@@ -1,0 +1,75 @@
+Parallel Stream Processor
+=========================
+
+The goal of this part is to implement a parallel stream processor and calculate mean and standard deviation on a stream. You should use only the python standard library and it should not be necessary to import any other module than is in the following snippet. To make it simpler and possibly faster we don't care about ordering of the output sequence.
+
+[source,python]
+```
+import time
+import weakref
+import multiprocessing
+
+class StreamProcessor:
+    def __init__(self, input_stream, map_function, reduce_generator=None, 
+                 *, number_of_processes=multiprocessing.cpu_count()):
+        ...
+
+
+def is_prime(n):
+    time.sleep(1)
+
+    if n < 2:
+        return False, n
+    elif n == 2:
+        return True, n
+    sqrt_n = int(n**0.5)+1
+    return len([i for i in range(2, sqrt_n+1) if n % i == 0]) == 0, n
+
+def only_primes(stream):
+    try:
+        while True:
+            is_valid, value = next(stream)
+            while not is_valid:
+                is_valid, value = next(stream)
+            yield value
+    except StopIteration:
+        return 
+
+def streaming_statistics(stream):
+    ...
+```
+
+And it should work in the following way:
+
+[source,python]
+```
+>>> from itertools import islice, tee
+>>> %time list(islice(StreamProcessor(range(100), is_prime, number_of_processes=10), 10))
+[(False, 1), (False, 0), (True, 2), (True, 7), (False, 6), (False, 4), (True, 3), (True, 5), (False, 9), (False, 10)]
+Wall time: 1.18 s
+
+>>> %time list(StreamProcessor(range(100), is_prime, only_primes, number_of_processes=4))
+[2, 3, 5, 11, 13, 7, 17, 23, 29, 19, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+Wall time: 25s
+
+>>> %time list(islice(StreamProcessor(range(100), is_prime, only_primes, number_of_processes=5), 5))
+[3, 2, 5, 7, 11]
+Wall time: 3s
+
+>>> %time list(StreamProcessor(range(100), is_prime, only_primes, number_of_processes=32))
+[2, 3, 7, 5, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+Wall time: 4s
+
+>>> raw, stats = tee(StreamProcessor(range(100), is_prime, only_primes))
+>>> list(islice(zip(raw, streaming_statistics(stats)), 10))
+[(3, {'mean': nan, 'std': nan}),
+ (2, {'mean': 2.5, 'std': 0.7071067811865476}),
+ (5, {'mean': 3.3333333333333335, 'std': 1.5275252316519465}),
+ (7, {'mean': 4.25, 'std': 2.217355782608345}),
+ (11, {'mean': 5.6, 'std': 3.5777087639996634}),
+ (13, {'mean': 6.833333333333333, 'std': 4.400757510550504}),
+ (23, {'mean': 9.142857142857142, 'std': 7.312741652498773}),
+ (19, {'mean': 10.375, 'std': 7.614600636746675}),
+ (17, {'mean': 11.11111111111111, 'std': 7.457285773732365}),
+ (29, {'mean': 12.9, 'std': 9.024041962077378})]
+```
