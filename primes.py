@@ -1,10 +1,10 @@
 from typing import Generator, Iterator, Tuple
+import time
 
 
 
 def is_prime(n: float) -> Tuple[bool, float]:
-	# time.sleep(3)
-
+	# time.sleep(1)
 	if n < 2:
 		return False, n
 	elif n == 2:

@@ -24,7 +24,7 @@ def streaming_statistics(stream: Iterable) -> List[Dict[str, Any]]:
 			mean = cum_sum / cum_len
 
 			# Sum of all deviations, i.e. squared difference of the numbers less the mean
-			deviations = sum((x - mean) ** 2 for x in cum_items)
+			deviations = sum((n - mean) ** 2 for n in cum_items)
 
 			# Variance is 1/length * sum of deviations
 			variance = deviations / (cum_len - 1)
